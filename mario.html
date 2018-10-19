@@ -1,17 +1,22 @@
 <!DOCTYPE html>
 <html>
-<canvas id="canvas" width="1000" height="500"></canvas>
+<canvas id="canvas" width="1000" height="400"></canvas>
 
-<img id="idle_right" style="display: none;" src="idle_right.png">
-<img id="idle_left"  style="display: none;" src="idle_left.png">
-<img id="jump_right" style="display: none;" src="jump_right.png">
-<img id="jump_left"  style="display: none;" src="jump_left.png">
-<img id="walk_right" style="display: none;" src="walk_right.png">
-<img id="walk_left"  style="display: none;" src="walk_left.png">
-<img id="fall_right" style="display: none;" src="fall_right.png">
-<img id="fall_left"  style="display: none;" src="fall_left.png">
-<img id="down_right" style="display: none;" src="down_right.png">
-<img id="down_left"  style="display: none;" src="down_left.png">
+<img id="idle_right" style="display: none;" src="https://raw.githubusercontent.com/arthurkamienski/javascript-mario/master/sprites/idle_right.png">
+<img id="idle_left"  style="display: none;" src="https://raw.githubusercontent.com/arthurkamienski/javascript-mario/master/sprites/idle_left.png">
+<img id="jump_right" style="display: none;" src="https://raw.githubusercontent.com/arthurkamienski/javascript-mario/master/sprites/jump_right.png">
+<img id="jump_left"  style="display: none;" src="https://raw.githubusercontent.com/arthurkamienski/javascript-mario/master/sprites/jump_left.png">
+<img id="walk_right" style="display: none;" src="https://raw.githubusercontent.com/arthurkamienski/javascript-mario/master/sprites/walk_right.png">
+<img id="walk_left"  style="display: none;" src="https://raw.githubusercontent.com/arthurkamienski/javascript-mario/master/sprites/walk_left.png">
+<img id="fall_right" style="display: none;" src="https://raw.githubusercontent.com/arthurkamienski/javascript-mario/master/sprites/fall_right.png">
+<img id="fall_left"  style="display: none;" src="https://raw.githubusercontent.com/arthurkamienski/javascript-mario/master/sprites/fall_left.png">
+<img id="down_right" style="display: none;" src="https://raw.githubusercontent.com/arthurkamienski/javascript-mario/master/sprites/down_right.png">
+<img id="down_left"  style="display: none;" src="https://raw.githubusercontent.com/arthurkamienski/javascript-mario/master/sprites/down_left.png">
+<img id="coin_cube"  style="display: none;" src="https://raw.githubusercontent.com/arthurkamienski/javascript-mario/master/sprites/coin_cube.png">
+<img id="spent_coin_cube"  style="display: none;" src="https://raw.githubusercontent.com/arthurkamienski/javascript-mario/master/sprites/spent_coin_cube.png">
+<img id="green_tube"  style="display: none;" src="https://raw.githubusercontent.com/arthurkamienski/javascript-mario/master/sprites/green_tube.png">
+<img id="ground"  style="display: none;" src="https://raw.githubusercontent.com/arthurkamienski/javascript-mario/master/sprites/regular_ground.png">
+<img id="background"  style="display: none;" src="https://raw.githubusercontent.com/arthurkamienski/javascript-mario/master/sprites/reg_background.png">
 
 <script>
 
@@ -68,7 +73,7 @@
     canvas = document.getElementById('canvas');
     canvasContext = canvas.getContext('2d');
 
-    ground = canvas.height-50;
+    ground = canvas.height-document.getElementById('ground').height;
     mario = new Mario();
     
     setInterval(iteration, 1000/fps);
@@ -151,11 +156,39 @@
     draw();
   }
 
+  function drawGround() {
+  	var groundtile = document.getElementById("ground");
+
+  	var start = 0;
+
+  	while(start < canvas.width) {
+  		canvasContext.drawImage(groundtile, start, ground);
+  		start += groundtile.width;
+  	}
+  }
+
+  function drawBackground() {
+  	var background = document.getElementById("background");
+  	var start = 0;
+
+  	while(start < canvas.width) {
+  		canvasContext.drawImage(background, start, 0);
+  		start += background.width;
+  	}
+  }
+
+  function drawObject(id, pos) {
+  	var obj = document.getElementById(id);
+
+  	canvasContext.drawImage(obj, pos.x, pos.y-obj.height);
+  }
+
   function draw() {
-    canvasContext.fillStyle = 'dodgerblue';
-    canvasContext.fillRect(0, 0, canvas.width, canvas.height);
-    canvasContext.fillStyle = 'green';
-    canvasContext.fillRect(0, ground, canvas.width, canvas.height-ground);
+  	drawBackground();
+    drawGround();
+
+    drawObject("green_tube", {x:50, y:ground});
+    drawObject("coin_cube", {x:750, y:canvas.height-200});
 
 	canvasContext.drawImage(mario.img, mario.pos.x, mario.pos.y-mario.img.height);
   }
