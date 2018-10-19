@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+<canvas id="canvas" width="1000" height="500"></canvas>
+
+<img id="idle_right" style="display: none;" src="idle_right.png">
+<img id="idle_left"  style="display: none;" src="idle_left.png">
+<img id="jump_right" style="display: none;" src="jump_right.png">
+<img id="jump_left"  style="display: none;" src="jump_left.png">
+<img id="walk_right" style="display: none;" src="walk_right.png">
+<img id="walk_left"  style="display: none;" src="walk_left.png">
+<img id="fall_right" style="display: none;" src="fall_right.png">
+<img id="fall_left"  style="display: none;" src="fall_left.png">
+<img id="down_right" style="display: none;" src="down_right.png">
+<img id="down_left"  style="display: none;" src="down_left.png">
+
+<script>
+
+  var canvas;
+  var canvasContext;
+
+  var gravity = 1;
+  var atrict = 1/4;
+  var fps = 30;
+  var mario;
+  var ground;
+
+  function Mario() {
+  	this.side = "right";
+  	this.state = "idle";
+  	this.img = document.getElementById(this.state + "_" + this.side);
+  	this.pos = {x:canvas.width/2, y:ground};
+  	this.speed = {x:0, y:0};
+  	this.tick = 0;
+  	this.down = false;
+
+  	this.setImage = function() { 
+  		this.tick++;
+  		this.tick %= 2;
+
+  		if(this.pos.y>=ground) {
+  			if(this.speed.x != 0) {
+  				if(this.tick == 0) {
+  					if(this.state == "idle") { 
+  						this.state = "walk";
+  					} else {
+  						this.state = "idle";
+  					}
+  				}
+  			} else {
+  				if(this.down)
+  					this.state = "down";
+  				else
+  					this.state = "idle";
+  			}
+  		} else {
+  			if(this.speed.y < 0)
+  				this.state = "jump";
+  			else
+  				this.state = "fall";
+  		}
+
+  		this.img = document.getElementById(this.state + "_" + this.side);
+  	}
+  }
+
+  window.onload = function() {
+
+    canvas = document.getElementById('canvas');
+    canvasContext = canvas.getContext('2d');
+
+    ground = canvas.height-50;
+    mario = new Mario();
+    
+    setInterval(iteration, 1000/fps);
+
+    document.addEventListener('keydown', move);
+    document.addEventListener('keyup', stop);
+  }
+
+  function move(evt) {
+    switch(evt.keyCode) {
+      case 37:
+        mario.speed.x = -7;
+        mario.side = "left";
+        break;
+      case 38:
+        jump();
+        break;
+      case 39:
+        mario.speed.x = 7;
+        mario.side = "right";
+        break;
+      case 40:
+      	mario.down = true;
+      	break;
+    }
+  }
+
+  function stop(evt) {
+    if(evt.keyCode == 37){
+    	if(mario.speed.x < 0) {
+    		mario.speed.x = 0;
+    	}
+    } else if (evt.keyCode == 39) {
+    	if(mario.speed.x > 0) {
+    		mario.speed.x = 0;
+    	}
+    }
+    else if(evt.keyCode == 40) {
+    	mario.down = false;
+    }
+  }
+
+  function jump() {
+    if(mario.pos.y == ground) {
+      mario.speed.y = -20;
+  	}
+  }
+
+  function applyGravity() {
+    mario.speed.y += gravity;
+  }
+
+  function updatePosition() {
+    mario.pos.x += mario.speed.x;
+    mario.pos.y += mario.speed.y;
+
+    if(mario.pos.y>=ground) {
+      mario.pos.y = ground;
+      // mario.speed.y = -mario.speed.y/1.6;
+    }
+
+    if(mario.pos.y<=0) {
+      mario.pos.y = 0;
+      // mario.speed.y = -mario.speed.y/1.3;
+    }
+
+    if(mario.pos.x+mario.img.width>=canvas.width) {
+      mario.pos.x = canvas.width-mario.img.width;
+      // mario.speed.x = -mario.speed.x/1.3;
+    } else if(mario.pos.x<=0) {
+      mario.pos.x = 0;
+      // mario.speed.x = -mario.speed.x/1.3;
+    }
+  }
+
+  function iteration() {
+    applyGravity();
+    updatePosition();
+    mario.setImage();
+    draw();
+  }
+
+  function draw() {
+    canvasContext.fillStyle = 'dodgerblue';
+    canvasContext.fillRect(0, 0, canvas.width, canvas.height);
+    canvasContext.fillStyle = 'green';
+    canvasContext.fillRect(0, ground, canvas.width, canvas.height-ground);
+
+	canvasContext.drawImage(mario.img, mario.pos.x, mario.pos.y-mario.img.height);
+  }
+
+</script>
+</html>
