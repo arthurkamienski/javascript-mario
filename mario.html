@@ -28,44 +28,51 @@
   var fps = 30;
   var mario;
   var ground;
+  var objects = [];
 
   function Mario() {
-  	this.side = "right";
-  	this.state = "idle";
-  	this.img = document.getElementById(this.state + "_" + this.side);
-  	this.pos = {x:canvas.width/2, y:ground};
-  	this.speed = {x:0, y:0};
-  	this.tick = 0;
-  	this.down = false;
+    this.side = "right";
+    this.state = "idle";
+    this.img = document.getElementById(this.state + "_" + this.side);
+    this.pos = {x:canvas.width/2, y:ground};
+    this.speed = {x:0, y:0};
+    this.tick = 0;
+    this.down = false;
+    this.hb = new Hitbox(this.pos, this.img);
 
-  	this.setImage = function() { 
-  		this.tick++;
-  		this.tick %= 2;
+    this.setImage = function() { 
+      this.tick++;
+      this.tick %= 2;
 
-  		if(this.pos.y>=ground) {
-  			if(this.speed.x != 0) {
-  				if(this.tick == 0) {
-  					if(this.state == "idle") { 
-  						this.state = "walk";
-  					} else {
-  						this.state = "idle";
-  					}
-  				}
-  			} else {
-  				if(this.down)
-  					this.state = "down";
-  				else
-  					this.state = "idle";
-  			}
-  		} else {
-  			if(this.speed.y < 0)
-  				this.state = "jump";
-  			else
-  				this.state = "fall";
-  		}
+      if(this.speed.x > 0)
+      this.side = "right";
+    else if(this.speed.x < 0)
+      this.side = "left";
 
-  		this.img = document.getElementById(this.state + "_" + this.side);
-  	}
+      if(this.speed.y == 0) {
+        if(this.speed.x != 0) {
+          if(this.tick == 0) {
+            if(this.state == "idle") { 
+              this.state = "walk";
+            } else {
+              this.state = "idle";
+            }
+          }
+        } else {
+          if(this.down)
+            this.state = "down";
+          else
+            this.state = "idle";
+        }
+      } else {
+        if(this.speed.y < 0)
+          this.state = "jump";
+        else
+          this.state = "fall";
+      }
+
+      this.img = document.getElementById(this.state + "_" + this.side);
+    }
   }
 
   window.onload = function() {
@@ -75,6 +82,9 @@
 
     ground = canvas.height-document.getElementById('ground').height;
     mario = new Mario();
+
+    addObject("green_tube", {x:100, y:ground});
+    addObject("coin_cube", {x:750, y:canvas.height-180});
     
     setInterval(iteration, 1000/fps);
 
@@ -82,44 +92,62 @@
     document.addEventListener('keyup', stop);
   }
 
+  function addObject(id, pos) {
+    var img = document.getElementById(id);
+
+    objects.push({
+      img: img, 
+      pos: pos,
+      hb: new Hitbox(pos, img)});
+  }
+
+  function Hitbox(pos, img) {
+    this.t = pos.y-img.height;
+    this.b = pos.y;
+    this.l = pos.x-img.width/2;
+    this.r = pos.x+img.width/2;
+    this.tl = {x: this.l, y: this.t};
+    this.tr = {x: this.r, y: this.t};
+    this.bl = {x: this.l, y: this.b};
+    this.br = {x: this.r, y: this.b};
+  }
+
   function move(evt) {
     switch(evt.keyCode) {
       case 37:
         mario.speed.x = -7;
-        mario.side = "left";
         break;
       case 38:
         jump();
         break;
       case 39:
         mario.speed.x = 7;
-        mario.side = "right";
         break;
       case 40:
-      	mario.down = true;
-      	break;
+        mario.down = true;
+        break;
     }
   }
 
   function stop(evt) {
     if(evt.keyCode == 37){
-    	if(mario.speed.x < 0) {
-    		mario.speed.x = 0;
-    	}
+      if(mario.speed.x < 0) {
+        mario.speed.x = 0;
+      }
     } else if (evt.keyCode == 39) {
-    	if(mario.speed.x > 0) {
-    		mario.speed.x = 0;
-    	}
+      if(mario.speed.x > 0) {
+        mario.speed.x = 0;
+      }
     }
     else if(evt.keyCode == 40) {
-    	mario.down = false;
+      mario.down = false;
     }
   }
 
   function jump() {
-    if(mario.pos.y == ground) {
+    if(mario.hb.b == ground) {
       mario.speed.y = -20;
-  	}
+    }
   }
 
   function applyGravity() {
@@ -130,23 +158,96 @@
     mario.pos.x += mario.speed.x;
     mario.pos.y += mario.speed.y;
 
-    if(mario.pos.y>=ground) {
+    mario.hb = new Hitbox(mario.pos, mario.img);
+
+    if(mario.hb.b>=ground) {
       mario.pos.y = ground;
+      mario.speed.y = 0;
       // mario.speed.y = -mario.speed.y/1.6;
     }
 
-    if(mario.pos.y<=0) {
-      mario.pos.y = 0;
-      // mario.speed.y = -mario.speed.y/1.3;
+    if(mario.hb.t <= 0) {
+      mario.pos.y = mario.img.height;
+      mario.speed.y = -mario.speed.y/1.3;
     }
 
-    if(mario.pos.x+mario.img.width>=canvas.width) {
-      mario.pos.x = canvas.width-mario.img.width;
+    if(mario.hb.r>=canvas.width) {
+      mario.pos.x = canvas.width-mario.img.width/2;
       // mario.speed.x = -mario.speed.x/1.3;
-    } else if(mario.pos.x<=0) {
-      mario.pos.x = 0;
+    } else if(mario.hb.l<=0) {
+      mario.pos.x = mario.img.width/2;
       // mario.speed.x = -mario.speed.x/1.3;
     }
+
+    for (var i = objects.length - 1; i >= 0; i--) {
+      var o = objects[i];
+
+      if(collision(mario.hb, o.hb)) {
+        var side = getMinSideDist(mario.hb, o.hb);
+
+        if(i == 0) console.log(side);
+
+        switch(side) {
+          case "b":
+            mario.pos.y = o.hb.t;
+            mario.speed.y = 0;
+            break;
+          case "t":
+            mario.pos.y = o.hb.b+mario.img.height;
+            mario.speed.y = -mario.speed.y/1.3;
+            break
+          case "r":
+            mario.pos.x = o.hb.l-mario.img.width/2;
+            break;
+          case "l":
+            mario.pos.x = o.hb.r+mario.img.width/2;
+            break;
+        }
+      }
+    }
+
+    mario.hb = new Hitbox(mario.pos, mario.img);
+
+  }
+
+  function getMinSideDist(sqr1, sqr2) {
+    b = Math.abs(sqr1.b-sqr2.t);
+    t = Math.abs(sqr1.t-sqr2.b);
+    l = Math.abs(sqr1.l-sqr2.r);
+    r = Math.abs(sqr1.r-sqr2.l);
+
+    min = Math.min(b, t, l, r);
+
+    var side;
+
+    switch(min) {
+      case b:
+        side = "b";
+        break;
+      case t:
+        side = "t";
+        break;
+      case l:
+        side = "l";
+        break;
+      case r:
+        side = "r";
+        break;
+    }
+
+    return side;
+  }
+
+  function collision(sqr1, sqr2) {
+    var collision = true;
+
+    if(sqr1.l > sqr2.r || sqr2.l > sqr1.r)
+      collision = false;
+
+    if(sqr1.t > sqr2.b || sqr2.t > sqr1.b)
+        collision = false;
+
+    return collision;
   }
 
   function iteration() {
@@ -157,41 +258,47 @@
   }
 
   function drawGround() {
-  	var groundtile = document.getElementById("ground");
+    var groundtile = document.getElementById("ground");
 
-  	var start = 0;
+    var start = 0;
 
-  	while(start < canvas.width) {
-  		canvasContext.drawImage(groundtile, start, ground);
-  		start += groundtile.width;
-  	}
+    while(start < canvas.width) {
+      canvasContext.drawImage(groundtile, start, ground);
+      start += groundtile.width;
+    }
   }
 
   function drawBackground() {
-  	var background = document.getElementById("background");
-  	var start = 0;
+    var background = document.getElementById("background");
+    var start = 0;
 
-  	while(start < canvas.width) {
-  		canvasContext.drawImage(background, start, 0);
-  		start += background.width;
-  	}
+    while(start < canvas.width) {
+      canvasContext.drawImage(background, start, 0);
+      start += background.width;
+    }
   }
 
-  function drawObject(id, pos) {
-  	var obj = document.getElementById(id);
-
-  	canvasContext.drawImage(obj, pos.x, pos.y-obj.height);
+  function drawObjects() {
+    for (var i = objects.length - 1; i >= 0; i--) {
+      var o = objects[i];
+      canvasContext.drawImage(o.img, o.hb.l, o.hb.t);
+    }
   }
 
   function draw() {
-  	drawBackground();
+    drawBackground();
     drawGround();
+    drawObjects();
 
-    drawObject("green_tube", {x:50, y:ground});
-    drawObject("coin_cube", {x:750, y:canvas.height-200});
-
-	canvasContext.drawImage(mario.img, mario.pos.x, mario.pos.y-mario.img.height);
+  canvasContext.drawImage(mario.img, mario.pos.x-mario.img.width/2, mario.pos.y-mario.img.height);
   }
+
+  window.addEventListener("keydown", function(e) {
+    // space and arrow keys
+    if([32, 37, 38, 39, 40].indexOf(e.keyCode) > -1) {
+        e.preventDefault();
+    }
+}, false);
 
 </script>
 </html>
