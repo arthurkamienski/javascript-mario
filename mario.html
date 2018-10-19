@@ -75,33 +75,38 @@
     }
   }
 
-  window.onload = function() {
+  function Object(id, pos) {
+      this.spec = id;
+      this.img = document.getElementById(id); 
+      this.pos = pos;
+      this.hb = new Hitbox(this.pos, this.img);
 
-    canvas = document.getElementById('canvas');
-    canvasContext = canvas.getContext('2d');
-
-    ground = canvas.height-document.getElementById('ground').height;
-    mario = new Mario();
-
-    addObject("green_tube", {x:100, y:ground});
-    addObject("coin_cube", {x:750, y:canvas.height-180});
-    
-    setInterval(iteration, 1000/fps);
-
-    document.addEventListener('keydown', move);
-    document.addEventListener('keyup', stop);
+      this.move = function() {}
   }
 
-  function addObject(id, pos) {
-    var img = document.getElementById(id);
+  function CoinCube(id, pos) {
+    Object.call(this, id, pos);
 
-    objects.push({
-      img: img, 
-      pos: pos,
-      hb: new Hitbox(pos, img)});
+    this.speed = 0;
+    this.anchor = this.pos.y;
+
+    this.hit = function() {
+      this.speed = -4;
+    }
+
+    this.move = function() {
+      this.pos.y += this.speed;
+
+      if(this.anchor-this.pos.y>=10)
+        this.speed = -this.speed;
+      else if(this.anchor == this.pos.y)
+        this.speed = 0;
+
+      this.hb = new Hitbox(this.pos, this.img);
+    }
   }
 
-  function Hitbox(pos, img) {
+    function Hitbox(pos, img) {
     this.t = pos.y-img.height;
     this.b = pos.y;
     this.l = pos.x-img.width/2;
@@ -110,6 +115,24 @@
     this.tr = {x: this.r, y: this.t};
     this.bl = {x: this.l, y: this.b};
     this.br = {x: this.r, y: this.b};
+  }
+
+
+  window.onload = function() {
+
+    canvas = document.getElementById('canvas');
+    canvasContext = canvas.getContext('2d');
+
+    ground = canvas.height-document.getElementById('ground').height;
+    mario = new Mario();
+
+    objects.push(new Object("green_tube", {x:100, y:ground}));
+    objects.push(new CoinCube("coin_cube", {x:750, y:canvas.height-180}));
+    
+    setInterval(iteration, 1000/fps);
+
+    document.addEventListener('keydown', move);
+    document.addEventListener('keyup', stop);
   }
 
   function move(evt) {
@@ -145,20 +168,27 @@
   }
 
   function jump() {
-    if(mario.hb.b == ground) {
+    if(mario.state == "idle" || mario.state == "walk") {
       mario.speed.y = -20;
     }
   }
 
   function applyGravity() {
-    mario.speed.y += gravity;
+      mario.speed.y += gravity;
   }
 
-  function updatePosition() {
+  function moveAll() {
     mario.pos.x += mario.speed.x;
     mario.pos.y += mario.speed.y;
 
     mario.hb = new Hitbox(mario.pos, mario.img);
+
+    for (var i = objects.length - 1; i >= 0; i--) {
+      objects[i].move();
+    }
+  }
+
+  function updatePosition() {
 
     if(mario.hb.b>=ground) {
       mario.pos.y = ground;
@@ -185,8 +215,6 @@
       if(collision(mario.hb, o.hb)) {
         var side = getMinSideDist(mario.hb, o.hb);
 
-        if(i == 0) console.log(side);
-
         switch(side) {
           case "b":
             mario.pos.y = o.hb.t;
@@ -195,6 +223,9 @@
           case "t":
             mario.pos.y = o.hb.b+mario.img.height;
             mario.speed.y = -mario.speed.y/1.3;
+            if(o.spec == "coin_cube") {
+              o.hit();
+            }
             break
           case "r":
             mario.pos.x = o.hb.l-mario.img.width/2;
@@ -252,6 +283,7 @@
 
   function iteration() {
     applyGravity();
+    moveAll();
     updatePosition();
     mario.setImage();
     draw();
@@ -290,7 +322,7 @@
     drawGround();
     drawObjects();
 
-  canvasContext.drawImage(mario.img, mario.pos.x-mario.img.width/2, mario.pos.y-mario.img.height);
+  canvasContext.drawImage(mario.img, mario.hb.l, mario.hb.t);
   }
 
   window.addEventListener("keydown", function(e) {
