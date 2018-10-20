@@ -1,22 +1,34 @@
 <!DOCTYPE html>
 <html>
-<canvas id="canvas" width="1000" height="400"></canvas>
+<head>
+  <title>Super Mario</title>
+  <base href="https://raw.githubusercontent.com/arthurkamienski/javascript-mario/master/" target="_blank">
+</head>
+<body>
+<canvas id="canvas" width="1000" height="400" tabindex="1"></canvas><br>
 
-<img id="idle_right" style="display: none;" src="https://raw.githubusercontent.com/arthurkamienski/javascript-mario/master/sprites/idle_right.png">
-<img id="idle_left"  style="display: none;" src="https://raw.githubusercontent.com/arthurkamienski/javascript-mario/master/sprites/idle_left.png">
-<img id="jump_right" style="display: none;" src="https://raw.githubusercontent.com/arthurkamienski/javascript-mario/master/sprites/jump_right.png">
-<img id="jump_left"  style="display: none;" src="https://raw.githubusercontent.com/arthurkamienski/javascript-mario/master/sprites/jump_left.png">
-<img id="walk_right" style="display: none;" src="https://raw.githubusercontent.com/arthurkamienski/javascript-mario/master/sprites/walk_right.png">
-<img id="walk_left"  style="display: none;" src="https://raw.githubusercontent.com/arthurkamienski/javascript-mario/master/sprites/walk_left.png">
-<img id="fall_right" style="display: none;" src="https://raw.githubusercontent.com/arthurkamienski/javascript-mario/master/sprites/fall_right.png">
-<img id="fall_left"  style="display: none;" src="https://raw.githubusercontent.com/arthurkamienski/javascript-mario/master/sprites/fall_left.png">
-<img id="down_right" style="display: none;" src="https://raw.githubusercontent.com/arthurkamienski/javascript-mario/master/sprites/down_right.png">
-<img id="down_left"  style="display: none;" src="https://raw.githubusercontent.com/arthurkamienski/javascript-mario/master/sprites/down_left.png">
-<img id="coin_cube"  style="display: none;" src="https://raw.githubusercontent.com/arthurkamienski/javascript-mario/master/sprites/coin_cube.png">
-<img id="spent_coin_cube"  style="display: none;" src="https://raw.githubusercontent.com/arthurkamienski/javascript-mario/master/sprites/spent_coin_cube.png">
-<img id="green_tube"  style="display: none;" src="https://raw.githubusercontent.com/arthurkamienski/javascript-mario/master/sprites/green_tube.png">
-<img id="ground"  style="display: none;" src="https://raw.githubusercontent.com/arthurkamienski/javascript-mario/master/sprites/regular_ground.png">
-<img id="background"  style="display: none;" src="https://raw.githubusercontent.com/arthurkamienski/javascript-mario/master/sprites/reg_background.png">
+<p id="counter">Coins: 0</p>
+
+<img id="idle_right" style="display: none;" src="sprites/idle_right.png">
+<img id="idle_left"  style="display: none;" src="sprites/idle_left.png">
+<img id="jump_right" style="display: none;" src="sprites/jump_right.png">
+<img id="jump_left"  style="display: none;" src="sprites/jump_left.png">
+<img id="walk_right" style="display: none;" src="sprites/walk_right.png">
+<img id="walk_left"  style="display: none;" src="sprites/walk_left.png">
+<img id="fall_right" style="display: none;" src="sprites/fall_right.png">
+<img id="fall_left"  style="display: none;" src="sprites/fall_left.png">
+<img id="down_right" style="display: none;" src="sprites/down_right.png">
+<img id="down_left"  style="display: none;" src="sprites/down_left.png">
+<img id="coin_cube"  style="display: none;" src="sprites/coin_cube.png">
+<img id="spent_coin_cube"  style="display: none;" src="sprites/spent_coin_cube.png">
+<img id="coin1"  style="display: none;" src="sprites/coin1.png">
+<img id="coin2"  style="display: none;" src="sprites/coin2.png">
+<img id="coin3"  style="display: none;" src="sprites/coin3.png">
+<img id="coin4"  style="display: none;" src="sprites/coin4.png">
+
+<img id="green_tube"  style="display: none;" src="sprites/green_tube.png">
+<img id="ground"  style="display: none;" src="sprites/regular_ground.png">
+<img id="background"  style="display: none;" src="sprites/reg_background.png">
 
 <script>
 
@@ -29,10 +41,12 @@
   var mario;
   var ground;
   var objects = [];
+  var coins = 0;
 
   function Mario() {
     this.side = "right";
     this.state = "idle";
+    this.standing = true;
     this.img = document.getElementById(this.state + "_" + this.side);
     this.pos = {x:canvas.width/2, y:ground};
     this.speed = {x:0, y:0};
@@ -45,11 +59,11 @@
       this.tick %= 2;
 
       if(this.speed.x > 0)
-      this.side = "right";
-    else if(this.speed.x < 0)
-      this.side = "left";
+        this.side = "right";
+      else if(this.speed.x < 0)
+        this.side = "left";
 
-      if(this.speed.y == 0) {
+      if(this.standing) {
         if(this.speed.x != 0) {
           if(this.tick == 0) {
             if(this.state == "idle") { 
@@ -72,11 +86,14 @@
       }
 
       this.img = document.getElementById(this.state + "_" + this.side);
+      mario.hb = new Hitbox(mario.pos, mario.img);
     }
   }
 
-  function Object(id, pos) {
+  function Object(id, pos, col) {
       this.spec = id;
+      this.col = col;
+      this.place = objects.length;
       this.img = document.getElementById(id); 
       this.pos = pos;
       this.hb = new Hitbox(this.pos, this.img);
@@ -84,8 +101,8 @@
       this.move = function() {}
   }
 
-  function CoinCube(id, pos) {
-    Object.call(this, id, pos);
+  function CoinCube(id, pos, col) {
+    Object.call(this, id, pos, col);
 
     this.speed = 0;
     this.anchor = this.pos.y;
@@ -93,22 +110,9 @@
     this.hit = function() {
       this.speed = -4;
       new sound("https://raw.githubusercontent.com/arthurkamienski/javascript-mario/master/sounds/coin.wav").play();
+      objects.push(new Coin("coin1", {x:this.pos.x, y: this.anchor-this.img.height-10}, false));
+      coins++;
     }
-
-    function sound(src) {
-      this.sound = document.createElement("audio");
-      this.sound.src = src;
-      this.sound.setAttribute("preload", "auto");
-      this.sound.setAttribute("controls", "none");
-      this.sound.style.display = "none";
-      document.body.appendChild(this.sound);
-      this.play = function(){
-          this.sound.play();
-      }
-      this.stop = function(){
-          this.sound.pause();
-    }
-}
 
     this.move = function() {
       this.pos.y += this.speed;
@@ -122,7 +126,51 @@
     }
   }
 
-    function Hitbox(pos, img) {
+  function Coin(id, pos, col) {
+    Object.call(this, id, pos, col);
+
+    this.spec = "coin";
+    this.speed = -4;
+    this.anchor = this.pos.y;
+    this.ttl = 9;
+
+    this.move = function() {
+      this.pos.y += this.speed;
+
+      if(this.anchor-this.pos.y>=20)
+        this.speed = -this.speed;
+
+      this.img = document.getElementById(this.spec + (this.ttl%4+1));
+      this.hb = new Hitbox(this.pos, this.img);
+
+      if(this.ttl-- == 0)
+        removeObjFromList(objects, this);
+    }
+  }
+
+  function removeObjFromList(list, obj) {
+    for (var i = list.length - 1; i >= 0; i--) {
+      if(list[i] == obj)
+        objects.splice(i, 1);
+    }
+  }
+
+  function sound(src) {
+    this.sound = document.createElement("audio");
+    this.sound.src = src;
+    this.sound.setAttribute("preload", "auto");
+    this.sound.setAttribute("controls", "none");
+    this.sound.style.display = "none";
+    document.body.appendChild(this.sound);
+    this.play = function(){
+        this.sound.play();
+    }
+    this.stop = function(){
+        this.sound.pause();
+    }
+  }
+
+  function Hitbox(pos, img) {
     this.t = pos.y-img.height;
     this.b = pos.y;
     this.l = pos.x-img.width/2;
@@ -133,7 +181,6 @@
     this.br = {x: this.r, y: this.b};
   }
 
-
   window.onload = function() {
 
     canvas = document.getElementById('canvas');
@@ -142,8 +189,8 @@
     ground = canvas.height-document.getElementById('ground').height;
     mario = new Mario();
 
-    objects.push(new Object("green_tube", {x:100, y:ground}));
-    objects.push(new CoinCube("coin_cube", {x:750, y:canvas.height-180}));
+    objects.push(new Object("green_tube", {x:200, y:ground}, true));
+    objects.push(new CoinCube("coin_cube", {x:750, y:canvas.height-180}, true));
     
     setInterval(iteration, 1000/fps);
 
@@ -184,8 +231,9 @@
   }
 
   function jump() {
-    if(mario.state == "idle" || mario.state == "walk") {
+    if(mario.standing) {
       mario.speed.y = -20;
+      mario.standing = false;
     }
   }
 
@@ -196,8 +244,8 @@
   function moveAll() {
     mario.pos.x += mario.speed.x;
     mario.pos.y += mario.speed.y;
-
     mario.hb = new Hitbox(mario.pos, mario.img);
+
 
     for (var i = objects.length - 1; i >= 0; i--) {
       objects[i].move();
@@ -209,6 +257,7 @@
     if(mario.hb.b>=ground) {
       mario.pos.y = ground;
       mario.speed.y = 0;
+      mario.standing = true;
       // mario.speed.y = -mario.speed.y/1.6;
     }
 
@@ -228,33 +277,43 @@
     for (var i = objects.length - 1; i >= 0; i--) {
       var o = objects[i];
 
-      if(collision(mario.hb, o.hb)) {
-        var side = getMinSideDist(mario.hb, o.hb);
+      if(o.col) {
+        if(collision(mario.hb, o.hb)) {
+          var side = getMinSideDist(mario.hb, o.hb);
 
-        switch(side) {
-          case "b":
-            mario.pos.y = o.hb.t;
-            mario.speed.y = 0;
-            break;
-          case "t":
-            mario.pos.y = o.hb.b+mario.img.height;
-            mario.speed.y = -mario.speed.y/1.3;
-            if(o.spec == "coin_cube") {
-              o.hit();
-            }
-            break
-          case "r":
-            mario.pos.x = o.hb.l-mario.img.width/2;
-            break;
-          case "l":
-            mario.pos.x = o.hb.r+mario.img.width/2;
-            break;
+          switch(side) {
+            case "b":
+              if(mario.speed.y > 0){
+                mario.pos.y = o.hb.t;
+                mario.standing = true;
+                mario.speed.y = 0;
+              }
+              break;
+            case "t":
+              if(mario.speed.y < 0){
+                mario.pos.y = o.hb.b+mario.img.height;
+                mario.speed.y = -mario.speed.y/1.3;
+                if(o.spec == "coin_cube") {
+                  o.hit();
+                }
+              }
+              break
+            case "r":
+              if(mario.speed.x > 0){
+                mario.pos.x = o.hb.l-mario.img.width/2;
+              }
+              break;
+            case "l":
+              if(mario.speed.x < 0){
+                mario.pos.x = o.hb.r+mario.img.width/2;
+              }
+              break;
+          }
         }
       }
     }
 
     mario.hb = new Hitbox(mario.pos, mario.img);
-
   }
 
   function getMinSideDist(sqr1, sqr2) {
@@ -263,22 +322,22 @@
     l = Math.abs(sqr1.l-sqr2.r);
     r = Math.abs(sqr1.r-sqr2.l);
 
-    min = Math.min(b, t, l, r);
+    min = Math.min(l, r, b, t);
 
     var side;
 
     switch(min) {
-      case b:
-        side = "b";
-        break;
-      case t:
-        side = "t";
-        break;
       case l:
         side = "l";
         break;
       case r:
         side = "r";
+        break;
+      case b:
+        side = "b";
+        break;
+      case t:
+        side = "t";
         break;
     }
 
@@ -303,6 +362,7 @@
     updatePosition();
     mario.setImage();
     draw();
+    document.getElementById("counter").textContent = "Coins: " + coins;
   }
 
   function drawGround() {
@@ -338,7 +398,7 @@
     drawGround();
     drawObjects();
 
-  canvasContext.drawImage(mario.img, mario.hb.l, mario.hb.t);
+    canvasContext.drawImage(mario.img, mario.hb.l, mario.hb.t);
   }
 
   window.addEventListener("keydown", function(e) {
@@ -349,4 +409,5 @@
 }, false);
 
 </script>
+</body>
 </html>
