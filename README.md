@@ -1,2 +1,2 @@
 # javascript-mario
-Mario game in JavaScript
+Mario in JavaScript
