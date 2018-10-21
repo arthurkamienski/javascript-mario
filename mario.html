@@ -7,7 +7,10 @@
 <body>
 <canvas id="canvas" width="1000" height="400" tabindex="0"></canvas><br>
 
-<p id="counter">Coins: 0</p>
+<p>Mario position: (<span id="marioPosx">0</span>,<span id="marioPosy">0</span>)</p>
+<p>Map position: <span id="mapPos">0</span></p>
+<p>Coins: <span id="coins">0</span></p>
+
 
 <img id="idle_right" style="display: none;" src="sprites/idle_right.png">
 <img id="idle_left"  style="display: none;" src="sprites/idle_left.png">
@@ -35,6 +38,8 @@
 <script src="Sound.js"></script>
 
 <script>
+  new sound("https://raw.githubusercontent.com/arthurkamienski/javascript-mario/master/sounds/coin.wav");
+  new sound("https://raw.githubusercontent.com/arthurkamienski/javascript-mario/master/sounds/jump.wav");
   var canvas;
   var canvasContext;
 
@@ -44,6 +49,7 @@
   var ground;
   var objects = [];
   var coins = 0;
+  var mapPos = 0;
 
   window.onload = function() {
 
@@ -107,7 +113,12 @@
 
   function moveAll() {
     mario.updatePosition();
-    
+
+    if(mario.hb.r == canvas.width-400)
+      mapPos += mario.speed.x;
+    if(mario.hb.l == 200 && mapPos > 0)
+      mapPos += mario.speed.x;
+
     for (var i = objects.length - 1; i >= 0; i--) {
       objects[i].move();
     }
@@ -158,13 +169,16 @@
     moveAll();
     mario.updateState();
     draw();
-    document.getElementById("counter").textContent = "Coins: " + coins;
+    document.getElementById("coins").textContent = coins;
+    document.getElementById("marioPosx").textContent = mario.pos.x;
+    document.getElementById("marioPosy").textContent = mario.pos.y;
+    document.getElementById("mapPos").textContent = mapPos;
+
   }
 
   function drawGround() {
     var groundtile = document.getElementById("ground");
-
-    var start = 0;
+    var start = -mapPos%groundtile.width;
 
     while(start < canvas.width) {
       canvasContext.drawImage(groundtile, start, ground);
@@ -174,7 +188,7 @@
 
   function drawBackground() {
     var background = document.getElementById("background");
-    var start = 0;
+    var start = -mapPos%background.width;
 
     while(start < canvas.width) {
       canvasContext.drawImage(background, start, 0);

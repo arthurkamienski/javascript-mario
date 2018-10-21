@@ -64,11 +64,15 @@ function Character() {
       this.speed.y = -this.speed.y/1.3;
     }
 
-    if(this.hb.r >= canvas.width) {
-      this.pos.x = canvas.width-this.img.width/2;
+    if(this.hb.r >= canvas.width-400) {
+      this.pos.x = canvas.width-this.img.width/2-400;
       // this.speed.x = -this.speed.x/1.3;
-    } else if(this.hb.l <= 0) {
-      this.pos.x = this.img.width/2;
+    } else if(this.hb.l <= 200) {
+      if(mapPos != 0) {
+        this.pos.x = this.img.width/2+200;
+      } else if(this.hb.l <= 0) {
+        this.pos.x = this.img.width/2;
+      }
       // this.speed.x = -this.speed.x/1.3;
     }
 
